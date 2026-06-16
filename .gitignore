@@ -1,0 +1,53 @@
+[Build and Release]
+
+Игнорируем папки со скомпилированным кодом
+
+[Bb]in/
+[Oo]bj/
+
+[Visual Studio]
+
+Пользовательские настройки и кэш
+
+.vs/
+*.user
+*.userosscache
+*.suo
+
+[ASP.NET Core]
+
+Специфические файлы окружения и секреты
+
+appsettings.Development.json
+
+Если используешь User Secrets (обычно хранятся вне папки проекта, но на всякий случай)
+
+secrets.json
+.aspnet/
+
+[Databases]
+
+Локальные базы данных SQLite или SQL Express
+
+
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+
+[OS Specific]
+
+Мусор операционных систем
+
+.DS_Store
+Thumbs.db
+
+[NuGet]
+
+Пакеты и логи восстановления
+
+*.nuget.props
+*.nuget.targets
+project.lock.json
+/GoWebApplication.Db/appsettings.json
+/appsettings.json

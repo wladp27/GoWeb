@@ -1,0 +1,722 @@
+﻿@model EventCreateUpdateViewModel
+
+
+<div class="container mx-auto px-4 py-12 min-h-screen">
+
+    <div class="max-w-3xl mx-auto">
+        <h3 class="text-3xl font-extrabold text-gray-900 mb-8 text-center">Создать событие</h3>
+
+        <form asp-action="Create" method="post" enctype="multipart/form-data"  class="space-y-6 bg-white p-8 shadow-2xl rounded-2xl border border-gray-100">
+            <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm mb-4"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-group">
+                    <label asp-for="EventName" class="block text-sm font-bold text-gray-700 mb-1"></label>
+                    <input asp-for="EventName" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition" />
+                    <span asp-validation-for="EventName" class="text-red-500 text-xs mt-1"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Price" class="block text-sm font-bold text-gray-700 mb-1"></label>
+                    <input asp-for="Price" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition" />
+                    <span asp-validation-for="Price" class="text-red-500 text-xs mt-1"></span>
+                </div>
+            </div>
+
+         
+            <div class="form-group">
+                <label asp-for="EventDescription" class="block text-sm font-bold text-gray-700 mb-1"></label>
+                <textarea asp-for="EventDescription" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition" rows="3"></textarea>
+                <span asp-validation-for="EventDescription" class="text-red-500 text-xs mt-1"></span>
+            </div>
+
+        
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <div class="form-group">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Тип события</label>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="TypeEventInput" placeholder="Введите тип события..."
+                               class="flex-1 border p-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                    </div>
+                    <div id="typeEvenloader" class="hidden py-4 flex flex-col items-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+                    </div>
+                    <div id="resultsContainerTypeEvent" class="max-h-48 overflow-y-auto space-y-2 rounded-lg"></div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StatusEventId" class="block text-sm font-bold text-gray-700 mb-1"></label>
+                    <select asp-for="StatusEventId" asp-items="Model.StatusEvents" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"> 
+                        <option value="">-- Выбрать --</option> 
+                     </select> 
+                    <span asp-validation-for="StatusEventId" class="text-red-500 text-xs mt-1"></span>
+                </div>
+            </div>
+
+
+            <div id="ContainerInputAddress" class="mt-6 border-t pt-6">
+                <label id="LabelInputAddres" class="font-bold text-gray-800 block mb-3 text-lg">Выбор локации</label>
+
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex gap-3">
+                        <select id="selectedCity" asp-items="Model.Location.Cities" class="w-1/3 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">Город проведения</option>
+                        </select>
+                        <input type="text"
+                               id="AddressInput"
+                               placeholder="Введите адрес локации..."
+                               class="hidden flex-[2] px-4 py-3 bg-white border rounded-xl shadow-sm outline-none transition-all
+                              @(ViewData.ModelState.ContainsKey("AddressInput") && ViewData.ModelState["AddressInput"].Errors.Count > 0
+                                ? "border-red-500 ring-4 ring-red-500/10"
+                                : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10")">
+                                </div>
+                    @if (ViewData.ModelState.ContainsKey("AddressInput") && ViewData.ModelState["AddressInput"].Errors.Count > 0)
+                    {
+                        <span class="text-red-500 text-sm mt-1 ml-1">
+                            @ViewData.ModelState["AddressInput"].Errors[0].ErrorMessage
+                        </span>
+                    }
+                </div>
+
+
+                <div id="loaderAddress" class="hidden py-4 flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+                </div>
+                <div id="resultsAddressContainer" class="max-h-48 overflow-y-auto space-y-2 rounded-lg"></div>
+
+            </div>
+
+
+
+            <!-- 1. Добавляем чекбокс -->
+            <div class="mb-6 flex items-center">
+                <input type="checkbox" id="toggleLocation" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <label for="toggleLocation" class="ml-2 text-sm font-medium text-gray-900 cursor-pointer">
+                    Создать новую локацию
+                </label>
+            </div>
+
+  <fieldset id="locationFields" disabled class="space-y-6 hidden">
+    <!-- Основная сетка формы -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- ЛЕВАЯ КОЛОНКА (Выбор города + Карта) -->
+        <div class="space-y-4">
+            <div class="form-group">
+                <label asp-for="Location.CityId" class="block text-sm font-bold text-gray-700 mb-1">Город</label>
+                <select id="selectLocationCityId" asp-for="Location.CityId" asp-items="Model.Location.Cities" 
+                        class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="">-- Выбрать --</option>
+                </select>
+                <span asp-validation-for="Location.CityId" class="text-red-500 text-xs mt-1"></span>
+                <!-- Валидация под городом -->
+                <div id="validationNewAddress" class="w-full max-h-32 overflow-y-auto space-y-1 mt-2"></div>
+            </div>
+
+            <!-- Карта вровень с колонкой города -->
+            <div id="map" class="w-full h-64 bg-gray-100 rounded-lg border border-gray-200 shadow-sm relative overflow-hidden">
+                <div class="absolute inset-0 flex items-center justify-center text-gray-400 text-xs text-center p-4">
+                    Карта загрузится после выбора города
+                </div>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА (Поиск адреса + Результаты) -->
+        <div id="blockInputLocationAddress" class="md:col-span-2 space-y-4">
+            <!-- Поле ввода адреса -->
+            <div class="form-group">
+                <label asp-for="Location.Address" class="block text-sm font-bold text-gray-700 mb-1">Адрес</label>
+                <input id="inputLocationAddress" asp-for="Location.Address" 
+                       class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none" 
+                       placeholder="Введите улицу и номер дома..." />
+                <span asp-validation-for="Location.Address" class="text-red-500 text-xs mt-1"></span>
+            </div>
+
+            <!-- Результаты поиска вровень с полем адреса -->
+            <div class="form-group">
+                <div id="LocationInMap">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Загрузчик (индикатор процесса) -->
+    <div id="loaderNewLocation" class="hidden py-4 flex flex-col items-center border border-dashed border-blue-200 rounded-lg bg-blue-50/50">
+        <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-600"></div>
+        <span class="text-xs text-blue-600 mt-2 font-medium">Синхронизация с картой...</span>
+    </div>
+
+    <!-- Секция загрузки фото (на всю ширину) -->
+    <div class="pt-4 border-t border-gray-100">
+        <label asp-for="@Model.Location.imagesLocation" class="block text-xs font-bold text-gray-500 uppercase mb-2">Фотографии объекта</label>
+        <div class="flex items-center justify-center w-full">
+            <input asp-for="@Model.Location.imagesLocation" type="file" multiple accept="image/*"
+                   class="block w-full text-sm text-gray-500
+                          file:mr-4 file:py-2.5 file:px-4
+                          file:rounded-md file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-gray-100 file:text-gray-700
+                          hover:file:bg-gray-200
+                          border border-gray-300 rounded-lg p-1 bg-white cursor-pointer" />
+        </div>
+    </div>
+
+    <!-- Скрытые координаты для передачи в контроллер -->
+    <input type="hidden" asp-for="Location.LocationLongitude" />
+    <input type="hidden" asp-for="Location.LocationLatitude" />
+</fieldset>
+            @if (ViewData.ModelState.ContainsKey("inputLocationAddress") && ViewData.ModelState["inputLocationAddress"].Errors.Count > 0)
+            {
+                <span class="text-red-500 text-sm mt-1 ml-1">
+                    @ViewData.ModelState["inputLocationAddress"].Errors[0].ErrorMessage
+                </span>
+            }
+
+        
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label asp-for="StartTime" class="text-xs font-bold text-gray-500 uppercase"></label>
+                        <input asp-for="StartTime" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" type="datetime-local" />
+                    </div>
+                    <div>
+                        <label asp-for="EndTime" class="text-xs font-bold text-gray-500 uppercase"></label>
+                        <input asp-for="EndTime" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" type="datetime-local" />
+                    </div>
+                </div>
+            </div>
+
+            
+                
+            <div class="mb-3">
+                <label asp-for="ImageFile" class="text-xs font-bold text-gray-500 uppercase"></label>
+                <input asp-for="ImageFile" type="file"
+                       accept="image/jpeg,image/png,image/gif"
+                       class="block w-full text-sm text-slate-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-emerald-50 file:text-emerald-700
+                      hover:file:bg-emerald-100
+                      border border-gray-300 rounded-lg p-2" />
+                <div class="form-text">Поддерживаются форматы JPG, PNG, GIF.</div>
+                <span asp-validation-for="ImageFile" class="text-red-500 text-xs mt-1"></span>
+            </div>
+
+
+            <div class="grid grid-cols-2 gap-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div class="form-group">
+                    <label asp-for="MinParticipants" class="block text-sm font-bold text-blue-800">Мин. участников</label>
+                    <input asp-for="MinParticipants" class="w-full border border-blue-200 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="MaxParticipants" class="block text-sm font-bold text-blue-800">Макс. участников</label>
+                    <input asp-for="MaxParticipants" class="w-full border border-blue-200 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+            </div>
+
+      
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <div class="flex items-center space-x-3 mb-2">
+                    <input type="checkbox" id="toggleCheck" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                    <label class="text-sm font-bold text-gray-700 cursor-pointer" for="toggleCheck">
+                        Автосоздание события
+                    </label>
+                </div>
+                <div id="numberInputBlock" style="display: none;" class="mt-3 animate-pulse-once">
+                    <label asp-for="CountDaysRecreate" class="block text-xs font-semibold text-gray-500 mb-1 italic">Через сколько дней повторить?</label>
+                    <input asp-for="CountDaysRecreate" type="number" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+            </div>
+
+           
+            <div class="mt-6 border-t pt-6">
+                <label class="font-bold text-gray-800 block mb-3 text-lg">Организатор</label>
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="NameInput" placeholder="Введите никнейм..."
+                           class="flex-1 border p-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                </div>
+                <div id="loader" class="hidden py-4 flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+                </div>
+                <div id="resultsContainer" class="max-h-48 overflow-y-auto space-y-2 rounded-lg"></div>
+            </div>
+
+            <input type="hidden" asp-for="ImagePath" />
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="OrganizerId" />
+            <input type="hidden" asp-for="EventTypes" />
+
+            <input type="hidden" asp-for="StatusEvents" />
+
+            <input type="hidden" asp-for=EventTypeId />
+            <input type="hidden" asp-for="LocationId" />
+
+            <div class="pt-6">
+                <button type="submit" disabled="true" id="buttonEventSave" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-xl transform transition active:scale-95 text-lg uppercase tracking-wider 
+                                                                  disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">
+                    СОЗДАТЬ СОБЫТИЕ
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+
+
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+
+    let searchTimeout; 
+    async function getUsers() {
+        const nameInput = document.getElementById('NameInput');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const idUser = document.getElementById('OrganizerId');
+        const name = nameInput.value.trim();
+        const loader = document.getElementById('loader');
+
+        if (!name) {
+            resultsContainer.innerHTML = '<div class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg border border-amber-200">Введите никнейм для поиска</div>';
+            return;
+        }
+
+        loader.classList.remove('hidden');
+        try {
+            const response = await fetch(`/Manage/Events/GetUsers?userName=${encodeURIComponent(name)}`);
+            if (!response.ok) throw new Error(`Ошибка сервера`);
+
+            const listUser = await response.json();
+
+            if (!listUser || listUser.length === 0) {
+                resultsContainer.innerHTML = '<div class="text-gray-500 text-sm italic p-3 text-center">Никого не нашли...</div>';
+                return;
+            }
+            resultsContainer.innerHTML = '';
+            listUser.forEach(user => {
+                const userElement = document.createElement('div');
+                userElement.className = "p-3 border border-gray-200 rounded-xl hover:bg-blue-50 cursor-pointer flex justify-between items-center bg-white transition hover:border-blue-300 mb-2";
+                userElement.innerHTML = `<span class="font-bold text-gray-700">${user.userName}</span> <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full uppercase">Выбрать</span>`;
+
+                userElement.onclick = () => {
+                    nameInput.value = user.userName;
+                    resultsContainer.innerHTML = `<div class="p-3 bg-green-50 text-green-700 rounded-xl border border-green-200 flex items-center font-bold">✓ Выбран: ${user.userName}</div>`;
+                    idUser.value = user.id;
+                    nameInput.dataset.selected = "true";
+                };
+                resultsContainer.appendChild(userElement);
+            });
+        } catch (error) {
+            resultsContainer.innerHTML = '<div class="text-red-500 p-3 bg-red-50 rounded-lg">Ошибка загрузки данных</div>';
+        } finally {
+            loader.classList.add('hidden');
+        }
+    }
+
+    document.getElementById('NameInput').addEventListener('input', (e) => {
+        e.target.dataset.selected = "false";
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (e.target.dataset.selected !== "true") {
+                getUsers();
+            }
+        }, 1000);
+    });
+
+
+
+
+    let searchTimeout2;
+    const listEventType = @Html.Raw(Json.Serialize(Model.EventTypes));
+    
+    function filterTypeEvent() {
+        const EventTypeInput = document.getElementById('TypeEventInput');
+        const resultsContainer = document.getElementById('resultsContainerTypeEvent');
+        const idEventType = document.getElementById('EventTypeId');
+        const evT = EventTypeInput.value.toLowerCase().trim();
+        const loader = document.getElementById('typeEvenloader');
+
+        if (!evT) {
+            resultsContainer.innerHTML = '<div class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg border border-amber-200">Введите тип события для поиска</div>';
+            return;
+        }
+
+        loader.classList.remove('hidden');
+        const filtered = listEventType.filter(item =>
+            item.text.toLowerCase().includes(evT));
+
+        try {
+            if (!filtered || filtered.length === 0) {
+                resultsContainer.innerHTML = '<div class="text-gray-500 text-sm italic p-3 text-center">Ничего не нашли...</div>';
+                return;
+            }
+            resultsContainer.innerHTML = '';
+            filtered.forEach(eventT => {
+                const EventTypeElement = document.createElement('div');
+                EventTypeElement.className = "p-3 border border-gray-200 rounded-xl hover:bg-blue-50 cursor-pointer flex justify-between items-center bg-white transition hover:border-blue-300 mb-2";
+                EventTypeElement.innerHTML = `<span class="font-bold text-gray-700">${eventT.text}</span> <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full uppercase">Выбрать</span>`;
+
+                EventTypeElement.onclick = () => {
+                    EventTypeInput.value = eventT.text;
+                    resultsContainer.innerHTML = `<div class="p-3 bg-green-50 text-green-700 rounded-xl border border-green-200 flex items-center font-bold">✓ Выбран: ${eventT.text}</div>`;
+                    idEventType.value = eventT.value;
+                    EventTypeInput.dataset.selected = "true";
+                };
+                resultsContainer.appendChild(EventTypeElement);
+            });
+        } catch (error) {
+            resultsContainer.innerHTML = '<div class="text-red-500 p-3 bg-red-50 rounded-lg">Ошибка загрузки данных</div>';
+        } finally {
+            loader.classList.add('hidden');
+        }
+    }
+
+    document.getElementById('TypeEventInput').addEventListener('input', (e) => {
+        e.target.dataset.selected = "false";
+        clearTimeout(searchTimeout2);
+        searchTimeout2 = setTimeout(() => {
+            if (e.target.dataset.selected !== "true") {
+                filterTypeEvent();
+            }
+        }, 1000);
+    });
+
+
+    let searchTimeout3;
+    async function getLocations() {
+        const nameInput = document.getElementById('AddressInput');
+        const resultsContainer = document.getElementById('resultsAddressContainer');
+        const idLocation = document.getElementById('LocationId');
+        const name = nameInput.value.trim();
+        const loader = document.getElementById('loaderAddress');
+        const btn = document.getElementById("buttonEventSave");
+        const selectedCity =  document.getElementById("selectedCity");
+
+        if(!selectedCity.value)
+        {
+            resultsContainer.innerHTML = '<div class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg border border-amber-200">Выберите город</div>';
+            btn.disabled = true;
+            return;
+        }
+
+        if (!name) {
+            resultsContainer.innerHTML = '<div class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg border border-amber-200">Введите адресс локации</div>';
+            btn.disabled = true;
+            return;
+        }
+
+        
+
+        loader.classList.remove('hidden');
+        idLocation.value = "";
+        try {
+            const response = await fetch(`/Manage/Events/GetLocations?address=${encodeURIComponent(name)}&idCity=${encodeURIComponent(selectedCity.value)}`);
+            if (!response.ok) throw new Error(`Ошибка сервера`);
+            const listLocation = await response.json();
+            if (!listLocation || listLocation.length === 0) {
+                resultsContainer.innerHTML = '<div class="text-gray-500 text-sm italic p-3 text-center">Никого не нашли...</div>';
+                btn.disabled = true;
+                return;
+            }
+            resultsContainer.innerHTML = '';
+            listLocation.forEach(location => {
+                const locationElement = document.createElement('div');
+                locationElement.className = "p-3 border border-gray-200 rounded-xl hover:bg-blue-50 cursor-pointer flex justify-between items-center bg-white transition hover:border-blue-300 mb-2";
+                locationElement.innerHTML = `<span class="font-bold text-gray-700">${location.address}</span> <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full uppercase">Выбрать</span>`;
+
+                locationElement.onclick = () => {
+                    nameInput.value = location.address;
+                    resultsContainer.innerHTML = `<div class="p-3 bg-green-50 text-green-700 rounded-xl border border-green-200 flex items-center font-bold">✓ Выбран: ${location.address}</div>`;
+                    idLocation.value = location.id;
+                    nameInput.dataset.selected = "true";
+                    btn.disabled = false;
+                };
+                resultsContainer.appendChild(locationElement);
+            });
+        } catch (error) {
+            resultsContainer.innerHTML = '<div class="text-red-500 p-3 bg-red-50 rounded-lg">Ошибка загрузки данных</div>';
+        } finally {
+            loader.classList.add('hidden');
+        }
+    }
+
+    document.getElementById('AddressInput').addEventListener('input', (e) => {
+        e.target.dataset.selected = "false";
+        clearTimeout(searchTimeout3);
+        searchTimeout3 = setTimeout(() => {
+            if (e.target.dataset.selected !== "true") {
+                getLocations();
+            }
+        }, 1000);
+    });
+
+    
+
+
+    document.getElementById('toggleCheck').addEventListener('change', function() {
+        const block = document.getElementById('numberInputBlock');
+        block.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) block.querySelector('input').value = '';
+    });
+</script>
+
+
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const checkbox = document.getElementById('toggleLocation');
+        const locationContainer = document.getElementById('locationFields');
+        const idLocation = document.getElementById('LocationId');
+        const containerInputAddress =   document.getElementById("ContainerInputAddress");
+        const resultsContainer = document.getElementById('resultsAddressContainer');
+        const nameInput = document.getElementById('AddressInput');
+        const btn= document.getElementById("buttonEventSave");
+        function toggleFields() {
+            if (checkbox.checked) {
+                if(map==null)
+                {
+                    initMap(53.20007,50.15);
+                }
+                
+                locationContainer.classList.remove('hidden');
+                locationContainer.disabled = false;
+                containerInputAddress.classList.add('hidden');
+                idLocation.value = "";
+                resultsContainer.innerHTML = '';
+                nameInput.value = "";
+                btn.disabled = true;
+            } else {
+                 locationContainer.classList.add('hidden');
+                 locationContainer.disabled = true;
+                 containerInputAddress.classList.remove('hidden');
+                btn.disabled = true;
+            }
+        }
+
+        checkbox.addEventListener('change', toggleFields);
+
+        // Вызываем один раз при загрузке, чтобы проверить состояние (например, если страница перезагрузилась с ошибкой валидации)
+        toggleFields();
+    });
+</script>
+
+
+
+
+<script>
+        
+        const citySelect = document.getElementById('selectedCity');
+        const addressInput = document.getElementById('AddressInput');
+        citySelect.addEventListener('change', function() {
+        const selectedValue = this.value;
+
+        if (selectedValue != "") {
+            addressInput.classList.remove('hidden');
+        } 
+        else 
+        {
+            addressInput.classList.add('hidden');
+
+        }
+    });
+        const citySelectNewLocation =   document.getElementById('selectLocationCityId');
+        const addressInputNewLocation = document.getElementById('inputLocationAddress');
+        const  blockInputLocationAddress = document.getElementById('blockInputLocationAddress');
+        const locationInMap =  document.getElementById('LocationInMap');
+        citySelectNewLocation.addEventListener('change', function() {
+        const selectedNewLocationValue = this.value;
+        addressInputNewLocation.value="";
+        locationInMap.innerHTML = '';
+        if (selectedNewLocationValue != "") {
+            blockInputLocationAddress.classList.remove('hidden');
+        }
+        else
+        {
+          //  blockInputLocationAddress.classList.add('hidden');
+        }
+    });
+
+</script>
+
+
+
+
+       
+
+
+
+<!-- Подключение API -->
+<script src="https://api-maps.yandex.ru/v3/?apikey=7dab67a6-408d-45e0-b597-70c61e0f4951&lang=ru_RU"></script>
+
+<script>
+
+    let map = null;
+    let marker = null;
+    let content = document.createElement('div');
+    async function initMap(lat,lon) {
+        // Ожидание инициализации API
+        await ymaps3.ready;
+
+        // const ballImage = document.createElement('img');
+        // ballImage.src = '/images/markers/voleyball.png';
+        // ballImage.style.width = '50px'; 
+        // ballImage.style.height = '50px';
+        // ballImage.style.cursor = 'pointer';
+
+
+        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker } = ymaps3;
+
+        // Инициализация карты
+        map = new YMap(document.getElementById('map'), {
+            location: {
+                center: [lon,lat], 
+                zoom: 12
+            }
+        });
+        marker = new YMapMarker(
+                {
+                    coordinates: [lon,lat],
+                    draggable: true,
+                    zIndex: 100
+                },
+                content);
+       
+        // Добавляем необходимые слои
+        map.addChild(new YMapDefaultSchemeLayer());
+        map.addChild(new YMapDefaultFeaturesLayer());
+       
+
+
+    
+    }
+
+    // Инициализация при загрузке окна
+        let searchTimeout5;
+        async function SearchLocation()
+        {
+            
+            await ymaps3.ready;
+            const addressInput = document.getElementById("inputLocationAddress");
+            const resultsContainer = document.getElementById('LocationInMap');
+            const loader = document.getElementById('loaderNewLocation');
+            const btn= document.getElementById("buttonEventSave");
+            const idCity = document.getElementById("selectLocationCityId");
+            const name = addressInput.value.trim();
+            const locationLongitude =  document.getElementById("Location_LocationLongitude");
+            const locationLatitude =  document.getElementById("Location_LocationLatitude");
+            
+             if(!idCity.value)
+        {
+            resultsContainer.innerHTML = '<div class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg border border-amber-200">Выберите город</div>';
+            return;
+        }
+        const selectedCityName = citySelect.options[idCity.selectedIndex]; // проверку на существующий город сделать
+        resultsContainer.innerHTML ="";
+        if (!name) {
+            resultsContainerValidation.innerHTML = '<div class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg border border-amber-200">Введите адресс локации</div>';
+            return;
+        }
+        const fullName = `${selectedCityName.text}, ${name}`;
+        const {YMapMarker } = ymaps3;
+        const listLocation = await ymaps3.search({
+                                                        text: fullName,
+                                                        limit: 5
+                                                        });
+
+         
+
+
+            if (!listLocation || listLocation.length === 0) 
+            {
+                resultsContainer.innerHTML = '<div class="text-gray-500 text-sm italic p-3 text-center">Никого не нашли...</div>';
+                return;
+            }
+            resultsContainer.innerHTML = '';
+            listLocation.forEach(location => 
+             {
+                const locationElement = document.createElement('div');
+                locationElement.className = "p-3 border border-gray-200 rounded-xl hover:bg-blue-50 cursor-pointer flex justify-between items-center bg-white transition hover:border-blue-300 mb-2";
+                locationElement.innerHTML = `
+                                                <div class="flex flex-col">
+                                                    <span class="font-bold text-gray-700">${location.properties.name}</span>
+                                                    <span class="text-xs text-gray-500">${location.properties.description}</span>
+                                                </div>
+                                                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full uppercase">Выбрать</span>
+                                            `;
+                locationElement.onclick = async() => 
+                {
+                    map.update({
+                                         location: {
+                                             center: [location.geometry.coordinates[0],location.geometry.coordinates[1]], // Центр карты.
+                                             zoom: 18, // Уровень зума.
+                                             duration: 200, // Анимация карты займет 200 миллисекунд.
+                                             easing: 'ease-in-out' // Функция анимации изменения местоположения на карте.
+                                         }
+                                        });
+                
+                    content.style.cssText = 'width: 25px; height: 25px; position: relative; transform: translate(-50%, -50%);';
+                    content.innerHTML = `<img src="/images/markers/voleyball.png" style="width: 100%; height: 100%; display: block; cursor: pointer;">`;
+                    if(marker==null)
+                    {
+                        marker = new YMapMarker(
+                       {
+                           coordinates: [location.geometry.coordinates[0],location.geometry.coordinates[1]],
+                           draggable: true,
+                           zIndex: 100
+                       },
+                       content);
+
+                    }
+                    else
+                    {
+                        map.removeChild(marker);
+                        marker = new YMapMarker(
+                       {
+                           coordinates: [location.geometry.coordinates[0],location.geometry.coordinates[1]],
+                           draggable: true,
+                           zIndex: 100
+                       },
+                       content);
+                       map.addChild(marker);
+                    }
+                    const fullAddress = `${location.properties.description}, ${location.properties.name}`;
+                    const response = await fetch(`/Manage/Events/CheckLocation?newAddress=${encodeURIComponent(fullAddress)}&idCity=${encodeURIComponent(idCity.value)}`);
+                    loader.classList.remove('hidden');
+                    addressInput.value=fullAddress;
+                    if (!response.ok) 
+                        throw new Error(`Ошибка сервера`);
+                    const hasLocation = await response.json();
+                    if (hasLocation) 
+                    {
+                        resultsContainer.innerHTML = `
+                                                    <div class="w-full block text-amber-600 text-sm p-4 bg-amber-50 rounded-lg border border-amber-200 shadow-sm">
+                                                        Данная локация уже существует, закройте модуль создания и выберите её в списке выше
+                                                    </div>`;
+                        loader.classList.add('hidden');
+                        btn.disabled = true;
+                        return;
+                    }
+                    resultsContainer.innerHTML =`<div class="p-3 bg-green-50 text-green-700 rounded-xl border border-green-200 flex items-center font-bold">✓ Данной локации нет в базе </div>`;
+                    btn.disabled = false;
+                    locationLongitude.value = location.geometry.coordinates[0].toString().replace('.', ',');
+                    locationLatitude.value = location.geometry.coordinates[1].toString().replace('.', ',');
+                    resultsContainer.innerHTML =`<div class="p-3 bg-green-50 text-green-700 rounded-xl border border-green-200 flex items-center font-bold">✓ Данной локации нет в базе </div>`;
+                    loader.classList.add('hidden');
+                };
+                resultsContainer.appendChild(locationElement);
+            });
+        }
+
+        document.getElementById('inputLocationAddress').addEventListener('input', (e) => {
+        e.target.dataset.selected = "false";
+        clearTimeout(searchTimeout5);
+        searchTimeout5 = setTimeout(() => {
+            if (e.target.dataset.selected !== "true") {
+                SearchLocation();
+            }
+        }, 200);
+    });
+</script>

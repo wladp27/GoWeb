@@ -1,0 +1,67 @@
+﻿@model UserRolesEditorViewModel
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["ErrorMessage"]</div>
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+
+@{
+    if(Model==null)
+    {
+        <form asp-controller="Role" asp-action="EditRolesUser" method="post">
+            <div class="form-group">
+                <label asp-for="UserName" class="control-label"></label>
+                <input asp-for="UserName" class="form-control" />
+                <span asp-validation-for="UserName" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Получить список ролей</button>
+        </form>
+    }
+    else
+    {
+        <div class="container-sm border p-3 mb-4 rounded shadow-lg bg-white">
+            <h3 class="mb-3 text-primary">@Model.DisplayName</h3>
+            <p class="text-muted small">ID События: @Model.UserName</p>
+            @{
+                foreach(var role in Model.RolesUser)
+                {
+                    <div class="row gx-1">
+                        <div class="col-md-3">
+                            <div class="container-sm border p-2 mb-2 md-3 rounded shadow-lg bg-white">
+                                <p>@role</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="container-sm border p-2 mb-2 md-3 rounded shadow-lg bg-primary">
+                                <a asp-area="Admin" asp-controller="Role" asp-action="DeleteRoleUser" asp-route-nameRole="@role" asp-route-nameUser="@Model.UserName" class="btn btn-primary">Удалить роль</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            <form asp-action="EditRolesUser" method="post">
+	            
+                <div class="row gx-1">
+                    <div class="col-md-4">
+                        <label asp-for="@Model.SelectedRole" class="control-label"></label>
+                        <select asp-for="@Model.SelectedRole"
+	                            asp-items="Model.AllRoles"
+	                            class="form-control">
+		                    <option value="">-- Выберите роль --</option>
+	                    </select>
+                    </div>
+                </div>
+                <input type="hidden" asp-for="DisplayName" />
+                <input type="hidden" asp-for="UserName" />
+                <button type="submit" class="btn btn-primary">Добавить роль</button>
+            </form>
+        </div>
+    }
+}
+
+

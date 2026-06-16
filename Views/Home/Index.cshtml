@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Главная";
+}
+
+<div class="bg-light rounded-3 p-5 mb-5 shadow-sm border-0 position-relative overflow-hidden" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+    <div class="container-fluid py-5 text-center text-lg-start">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-4 fw-bold text-dark mb-3">
+                    Управляй своими событиями вместе с <span class="text-primary">GoWeb</span>
+                </h1>
+                <p class="col-lg-10 fs-4 text-muted mb-4">
+                    Современная платформа для организации, поиска и управления мероприятиями. Создавайте свои события, приглашайте друзей и будьте в курсе всего самого интересного!
+                </p>
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center justify-content-lg-start">
+                    <a asp-controller="Event" asp-action="Index" class="btn btn-primary btn-lg px-4 me-sm-3 fw-bold shadow">
+                        Смотреть события
+                    </a>
+                    @if (!User.Identity.IsAuthenticated)
+                    {
+                        <a asp-controller="Account" asp-action="Register" class="btn btn-outline-secondary btn-lg px-4">
+                            Присоединиться
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-area="User" asp-controller="Event" asp-action="MyEvents" class="btn btn-outline-secondary btn-lg px-4">
+                            Мой календарь
+                        </a>
+                    }
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center">
+                <div class="display-1 text-primary opacity-25" style="font-size: 10rem;">
+                    📅
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    </div>
+</div>
+
+@if (!User.Identity.IsAuthenticated)
+{
+    <div class="container py-5 my-5 text-center bg-dark text-white rounded-3 shadow">
+        <div class="p-4">
+            <h2 class="fw-bold">Готовы планировать свое время?</h2>
+            <p class="lead text-white-50">Создайте бесплатный аккаунт прямо сейчас и получите доступ ко всем возможностям.</p>
+            <a asp-controller="Account" asp-action="Register" class="btn btn-light btn-lg px-4 mt-3 fw-bold">Зарегистрироваться</a>
+        </div>
+    </div>
+}

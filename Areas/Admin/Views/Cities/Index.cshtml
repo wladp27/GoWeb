@@ -1,0 +1,13 @@
+﻿@model List<CityViewModel>
+<h3>Доступные города</h3
+@{
+	foreach(var city in Model)
+	{
+		<p>
+			@city.NameCity  Широта: @city.LocationLatitude Долгота: @city.LocationLongitude
+			<a asp-area="Admin" asp-controller="Cities" asp-action="Edit" asp-route-id="@city.Id" class="btn btn-primary">Редактировать</a>
+			<a asp-area="Admin" asp-controller="Cities" asp-action="Delete" asp-route-id="@city.Id" class="btn btn-primary">Удалить</a>
+		</p>
+	}
+}
+<a asp-area="Admin" asp-controller="Cities" asp-action="Create" class="btn btn-primary">Добывить город</a>

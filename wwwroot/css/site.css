@@ -1,0 +1,122 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.avatar-link {
+    /* Ссылка по умолчанию обводит картинку рамкой, убираем ее */
+    border: none;
+    outline: none;
+    display: inline-block;
+}
+
+.profile-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 10%; /* Делаем круглым */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+    /* Эффект при наведении */
+    .profile-avatar:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 10px rgba(0, 0, 0, 0.2);
+    }
+
+
+
+.cart-icon-link {
+    /* Основные параметры контейнера */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    /* Размеры иконки */
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    /* Оформление (делаем круглый фон) */
+    background-color: transparent; /* Изначально без фона */
+    border-radius: 50%;
+    border: none;
+    /* Настройки курсора и анимации */
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    /* Задаем фоновое изображение (саму иконку) */
+    background-image: url('/images/icons/cart-icon.png');
+    background-size: 60%; /* Размер иконки внутри контейнера */
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+    /* Эффект при наведении (появляется легкий фон) */
+    .cart-icon-link:hover {
+        background-color: #f3f4f6; /* Светло-серый фон при наведении */
+        /* Убираем transform, чтобы было проще */
+    }
+
+/* Скрываем текст для доступности */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+
+.custom-cluster {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Ваше изображение (иконка кластера) */
+.cluster-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Текст поверх изображения */
+.cluster-label {
+    position: absolute;
+    /* Центрируем текст */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* Стили текста */
+    color: white;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8); /* Чтобы число было видно на любом фоне */
+    pointer-events: none; /* Чтобы текст не мешал клику по маркеру */
+}

@@ -1,0 +1,17 @@
+﻿@model EventTypeViewMode
+
+<h3>Удалить тип события?</h3>
+
+@Model.Name
+
+<form asp-action="Delete" method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+
+    <input type="submit" value="Удалить" class="btn btn-danger" />
+
+    <a asp-action="Index" class="btn btn-secondary">Отмена</a>
+
+</form>

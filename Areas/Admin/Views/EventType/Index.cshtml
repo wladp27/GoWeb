@@ -1,0 +1,22 @@
+﻿@model List<EventTypeViewMode>
+
+@{
+	foreach(var eventType in Model)
+	{
+		<div class="container-sm border p-3 mb-2 rounded shadow-lg bg-white">
+			<p>
+				@eventType.Name
+				<img src="@eventType.ImagePath"
+					 class="img-thumbnail event-preview-thumb d-block"
+					 alt="Изображение события: @eventType.Name"
+					 style="max-width: 150px; height: auto;">
+		
+				<a asp-area="Admin" asp-controller="EventType" asp-action="Edit" asp-route-id="@eventType.Id" class="btn btn-primary">Редактировать</a>
+				<a asp-area="Admin" asp-controller="EventType" asp-action="Delete" asp-route-id="@eventType.Id" class="btn btn-primary">Удалить</a>
+			</p>
+		</div>
+	}
+	<a asp-area="Admin" asp-controller="EventType" asp-action="Create" class="btn btn-primary">Создать</a>
+	
+	<a asp-area="Admin" asp-controller="Editor" asp-action="Index" class="btn btn-primary">Назад</a>
+}

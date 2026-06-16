@@ -1,0 +1,98 @@
+﻿@model List<EventSummaryViewModel>
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+<div class="mt-3">
+    @{
+        if (Model != null && Model.Count!=0)
+        {
+            @foreach (var ev in Model)
+            {
+                <div class="container-sm border p-3 mb-4 rounded shadow-lg bg-white">
+
+                    <!-- Заголовок и ID -->
+                    <div class="row">
+                        <div class="col-md-10">
+                            <a asp-area="" asp-controller="Event" asp-action="Event" asp-route-id="@ev.Id" asp-route-returnUrl="@Context.Request.Path"> @ev.EventName</a>
+                        </div>
+
+                    </div>
+                    <p class="text-muted small">ID События: @ev.Id</p>
+                    <!-- Изображение, прижатое к левому краю -->
+                    <div class="row">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <img src="~/images/events/@ev.ImagePath"
+                                     class="img-thumbnail event-preview-thumb d-block"
+                                     alt="Изображение события: @ev.EventName"
+                                     style="max-width: 150px; height: auto;">
+                            </div>
+                            <div class="col-md-9">
+                                <h5 class="text-secondary">Описание</h5>
+                                <p>@ev.EventDescription</p>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Блок с деталями в две колонки -->
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <h5 class="text-info mt-2">Время</h5>
+                            <!-- Форматирование DateTimeOffset для читабельного вида -->
+                            <p><strong>Начало:</strong> @ev.StartTime.ToString("dd.MM.yyyy HH:mm")</p>
+                            <p><strong>Окончание:</strong> @ev.EndTime.ToString("dd.MM.yyyy HH:mm")</p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5 class="text-info mt-2">Местоположение</h5>
+                            <p><strong>Адресс:</strong> @ev.Location.Address</p>
+                            <p class="small text-muted">Широта: @ev.Location.LocationLatitude, Долгота: @ev.Location.LocationLongitude</p>
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <hr />
+                            <h5 class="text-success">Условия участия и Организация</h5>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- Участники и Стоимость -->
+                            <p><strong>Мин. участников:</strong> @ev.MinParticipants</p>
+                            <p><strong>Макс. участников:</strong> @ev.MaxParticipants</p>
+                            <!-- Форматирование стоимости как валюты -->
+                            <p><strong>Стоимость:</strong> @ev.Price.ToString("C0")</p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- Организатор -->
+                            <p><strong>Организатор:</strong> @ev.OrganizerName</p>
+                            <p class="small text-muted">ID Организатора: @ev.OrganizerId</p>
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-2 d-flex justify-content-end align-items-center">
+                        <a asp-area="User" asp-controller="Event" asp-action="Leave" asp-route-idEvent="@ev.Id" asp-route-returnUrl="@Context.Request.Path" class="btn btn-primary">Выписаться</a>
+                    </div>
+
+                </div>
+
+            }
+        }
+        else
+        {
+            <div class="col-md-6  text-center">
+                <h5 class="text-danger mt-2">Событий нет</h5>
+            </div>
+        }
+    }
+</div>

@@ -1,0 +1,21 @@
+﻿<h2>Введите ID для удаления</h2>
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+<form asp-action="Delete" method="post">
+    @Html.AntiForgeryToken()
+    
+    <div class="form-group">
+        <label for="id">ID События:</label>
+        <input type="number" name="id" class="form-control" required /> 
+    </div>
+    
+    <button type="submit" class="btn btn-danger mt-3">Удалить Событие</button>
+</form>

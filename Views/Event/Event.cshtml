@@ -1,0 +1,222 @@
+﻿@using System.Security.Claims
+@using GoWeb.Сonstants
+@model EventUsersViewModel
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+@{
+
+    if (User.Identity.IsAuthenticated && (User.FindFirst(ClaimTypes.NameIdentifier)?.Value == Model.OrganizerId || User.IsInRole("Администратор")))
+    {
+        if (User.FindFirst(ClaimTypes.NameIdentifier)?.Value == Model.OrganizerId)
+        {
+            <p>Вы организатор данного мероприятия</p>
+        }
+
+
+        <div class="container">
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="statusMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                    Сменить статус
+                </button>
+
+                <ul class="dropdown-menu" aria-labelledby="statusMenu">
+                    <li>
+                        <a asp-area="Manage"
+                        asp-controller="Events"
+                        asp-action="UpdateStatusEvent"
+                        asp-route-idEvent="@Model.Id"
+                        asp-route-idStatusEvent=@((int)StatusEventConts.Cancelled)>Отменить</a>
+                    </li>
+                    <li>
+                        <a asp-area="Manage"
+                        asp-controller="Events"
+                        asp-action="UpdateStatusEvent"
+                        asp-route-idEvent="@Model.Id"
+                        asp-route-idStatusEvent=@((int)StatusEventConts.Draft)>Черновик</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    }
+}
+<div class="container-sm border p-3 mb-4 rounded shadow-lg bg-white">
+
+    <!-- Заголовок и ID -->
+    <div class="row">
+        <div class="col-md-10">
+            <h3 class="mb-6 text-primary">@Model.EventName</h3>
+        </div> 
+    </div>
+    <p class="text-muted small">ID События: @Model.Id</p>
+    <!-- Изображение, прижатое к левому краю -->
+    <div class="row">
+        <div class="col-md-3">
+            <img src="~/images/events/@Model.ImagePath"
+            class="img-thumbnail event-preview-thumb d-block"
+            alt="Изображение события: @Model.EventName"
+            style="max-width: 150px; height: auto;">
+        </div>
+        <div class="col-md-9">
+            <h5 class="text-secondary">Описание</h5>
+            <p>@Model.EventDescription</p>
+        </div>
+    </div>
+
+
+
+    <!-- Блок с деталями в две колонки -->
+    <div class="row">
+
+        <div class="col-md-6">
+            <h5 class="text-info mt-2">Время</h5>
+            <!-- Форматирование DateTimeOffset для читабельного вида -->
+            <strong>Начало:</strong>
+            <time class="smart-date" datetime="@Model.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ")">
+                @Model.StartTime.ToString("g")
+            </time>
+
+
+
+            <p>
+                <strong>Окончание:</strong>  
+                <time class="smart-date" datetime="@Model.EndTime.ToString("yyyy-MM-ddTHH:mm:ssZ")">
+                    @Model.StartTime.ToString("g")
+                </time>
+            </p>
+        </div>
+
+        <div class="col-md-6">
+            <h5 class="text-info mt-2">Местоположение</h5>
+            <p><strong>Адресс:</strong> @Model.Location.Address</p>
+            <p class="small text-muted">Широта: @Model.Location.LocationLatitude, Долгота: @Model.Location.LocationLongitude</p>
+        </div>
+
+        <div class="col-12 mt-3">
+            <hr />
+            <h5 class="text-success">Условия участия и Организация</h5>
+        </div>
+
+        <div class="col-md-6">
+            <!-- Участники и Стоимость -->
+            <p><strong>Мин. участников:</strong> @Model.MinParticipants</p>
+            <p><strong>Макс. участников:</strong> @Model.MaxParticipants</p>
+            <!-- Форматирование стоимости как валюты -->
+            <p><strong>Стоимость:</strong> @Model.Price.ToString("C0")</p>
+        </div>
+
+        <div class="col-md-6">
+            <!-- Организатор -->
+            <p><strong>Организатор:</strong> @Model.OrganizerName</p>
+        </div>
+
+    </div>
+    <div class="row">
+
+        @{
+            if (Model.UsersRegistered.Any(us => us.UserName == User.FindFirstValue(ClaimTypes.Name)) || Model.UsersInReserve.Any(us => us.UserName == User.FindFirstValue(ClaimTypes.Name)))
+            {
+                <div class="col-md-2 d-flex justify-content-end align-items-center">
+                    <a asp-area="User" asp-controller="Event" asp-action="Leave" asp-route-idEvent="@Model.Id" asp-route-returnUrl="@ViewBag.ReturnUrl" class="btn btn-primary">Выписаться</a>
+                </div>
+            }
+            else
+            {
+                <div class="col-md-2 d-flex justify-content-end align-items-center">
+                    <a asp-area="User" asp-controller="Event" asp-action="Join" asp-route-idEvent="@Model.Id" asp-route-returnUrl="@ViewBag.ReturnUrl" class="btn btn-primary">Записаться</a>
+                </div>
+            }
+        }
+
+    </div>
+</div>
+
+<div class="col-md-10">
+    <h3 class="mb-6 text-primary">Участники</h3>
+</div>
+@{
+    foreach(var user in Model.UsersRegistered)
+    {
+        <div class="container-sm border p-3 mb-4 rounded shadow-lg bg-white">
+            <div class="col-md-6">
+                <p> @user.DisplayName</p>
+            </div>
+            @{
+                var existRating = user.Ratings.FirstOrDefault(r => r.EventTypeId == Model.EventTypeId);
+                if (existRating != null)
+                {
+                <div class="container-sm border p-3 mb-4 rounded shadow-lg bg-white">
+                    <div class="col-md-6">
+                            <p> @existRating.Value</p>
+                    </div>
+                </div>
+                }
+            }
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                Изменить статус/рейтинг
+            </button>
+            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel">Заголовок модального окна</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                        </div>
+                        <div class="modal-body">
+                            ...
+                        </div>
+                        <div class="modal-footer">
+                            
+                            <form asp-area="Manage" asp-controller="Events" asp-action="SetRatingUser" method="post">
+                                <p>Рейтинг: <input name="value" type="number" /></p>
+                                <input type="hidden" name="idEvent" value="@Model.Id" />
+                                <input type="hidden" name="userName" value="@user.UserName" />
+                                <input type="submit" value="Изменить" class="btn btn-primary" />
+                            </form>
+                            <button type="button" class="btn btn-primary">Сохранить изменения</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      
+       // string idUser, int idEvent, int value
+
+    }
+
+    }
+
+<div class="col-md-10">
+    <h3 class="mb-6 text-primary">Резерв</h3>
+</div>
+@{
+    foreach (var user in Model.UsersInReserve)
+    {
+        <div class="container-sm border p-3 mb-4 rounded shadow-lg bg-white">
+            <div class="col-md-6">
+                <p> @user.DisplayName</p>
+            </div>
+        </div>
+         var existRating = user.Ratings.FirstOrDefault(r => r.EventTypeId == Model.EventTypeId);
+         if (existRating != null)
+           {
+                <div class="container-sm border p-3 mb-4 rounded shadow-lg bg-white">
+                    <div class="col-md-6">
+                            <p> @existRating.Value</p>
+                    </div>
+                </div>
+           }
+       }
+
+    }
+
+}
+
+

@@ -1,0 +1,470 @@
+﻿@using System.Security.Claims
+@model EventIndexViewModel
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success" role="alert">@successMessage</div>
+}
+
+
+<form asp-action="Index" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="row gx-1">
+        <div class="col-md-2">
+            <label asp-for="@Model.Filter.SelectedCity" class="control-label"></label>
+            <select id="selectedCity" asp-for="@Model.Filter.SelectedCity"
+            asp-items="Model.Filter.Cities"
+            class="form-control">
+
+                <option value="">-- Выберите город --</option>
+
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="@Model.Filter.SelectedTypeEvent" class="control-label"></label>
+            <select asp-for="@Model.Filter.SelectedTypeEvent"
+            asp-items="Model.Filter.TypeEvents"
+            class="form-control">
+
+                <option value="">-- Выберите тип события --</option>
+                <span asp-validation-for="@Model.Filter.SelectedTypeEvent" class="text-danger"></span>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+
+            <input type="submit" value="Найти" class="btn btn-primary" />
+        </div>
+        <div class="mb-6 flex items-center">
+            <input type="checkbox"  id="openMap" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <label for="openMap" class="ml-2 text-sm font-medium text-gray-900 cursor-pointer">
+                Показать события на карте
+            </label>
+        </div>
+    </div>
+
+    <fieldset id="locationFields" disabled style="display: none;" class="space-y-4">
+        <div id="map" style="width: 100%; height: 400px; background-color: #e5e7eb; border-radius: 0.5rem;">
+        </div>
+    </fieldset>
+
+</form>
+<div class="mt-3">
+    @{
+        if (Model.result != null && Model.result.Count != 0)
+        {
+            @foreach (var ev in Model.result)
+            {
+                <div class="container-sm border p-3 mb-4 rounded shadow-lg bg-white">
+
+                    <!-- Заголовок и ID -->
+                    <div class="row">
+                        <div class="col-md-10">
+                            <a asp-controller="Event" asp-action="Event" asp-route-id="@ev.Id" asp-route-returnUrl="@Context.Request.Path"> @ev.EventName</a>
+                        </div>
+                        @{
+                            if (User.Identity.IsAuthenticated && User.IsInRole("Администратор"))
+                            {
+                                <div class="col-md-2 d-flex justify-content-end align-items-center">
+                                    <a asp-area="Admin"
+                                    asp-controller="Event"
+                                    asp-action="DeleteFor"
+                                    asp-route-id="@ev.Id"
+                                    asp-route-SelectedCity="@Model.Filter.SelectedCity"
+                                    asp-route-SelectedTypeEvent="@Model.Filter.SelectedTypeEvent"
+                                    class="cart-icon-link"
+                                    title="Удаление события"
+                                    aria-label="Удалить">
+                                        <span class="sr-only">Удалить событие</span>
+                                    </a>
+                                </div>
+                            }
+                        }
+                    </div>
+                    <p class="text-muted small">ID События: @ev.Id</p>
+                    <!-- Изображение, прижатое к левому краю -->
+                    <div class="row">
+                        <div class="col-md-3">
+                            <img src="~/images/events/@ev.ImagePath"
+                            class="img-thumbnail event-preview-thumb d-block"
+                            alt="Изображение события: @ev.EventName"
+                            style="max-width: 150px; height: auto;">
+                        </div>
+                        <div class="col-md-9">
+                            <h5 class="text-secondary">Описание</h5>
+                            <p>@ev.EventDescription</p>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Блок с деталями в две колонки -->
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <h5 class="text-info mt-2">Время</h5>
+                            <!-- Форматирование DateTimeOffset для читабельного вида -->
+                            <p>
+                                <strong>Начало:</strong> 
+                                <time class="smart-date" datetime="@ev.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ")">
+                                    @ev.StartTime.ToString("g")
+                                </time>
+                            </p>
+                            <p>
+                                <strong>Окончание:</strong>
+                                <time class="smart-date" datetime="@ev.EndTime.ToString("yyyy-MM-ddTHH:mm:ssZ")">
+                                    @ev.StartTime.ToString("g")
+                                </time>
+                            </p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5 class="text-info mt-2">Местоположение</h5>
+                            <p><strong>Адресс:</strong> @ev.Location.Address</p>
+                            <p class="small text-muted">Широта: @ev.Location.LocationLatitude, Долгота: @ev.Location.LocationLongitude</p>
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <hr />
+                            <h5 class="text-success">Условия участия и Организация</h5>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- Участники и Стоимость -->
+                            <p><strong>Мин. участников:</strong> @ev.MinParticipants</p>
+                            <p><strong>Макс. участников:</strong> @ev.MaxParticipants</p>
+                            <!-- Форматирование стоимости как валюты -->
+                            <p><strong>Стоимость:</strong> @ev.Price.ToString("C0")</p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- Организатор -->
+                            <p><strong>Организатор:</strong> @ev.OrganizerName</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Количество участников:</strong> @ev.CountRegisteredUsers</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex justify-content-end align-items-center">
+                    </div>
+                </div>
+
+            }
+        }
+        else
+        {
+            <div class="col-md-6  text-center">
+                <h5 class="text-danger mt-2">Событий нет</h5>
+            </div>
+        }
+    }
+</div>
+
+
+
+<div class="modal  fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Заголовок модального окна</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div id="SelectedEventInMap" class="max-h-48 overflow-y-auto d-grid gap-3 p-2 rounded-lg">
+
+                </div>
+                <div class="modal-footer">
+                   
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    @section Scripts {
+    @* Важно: Сначала подключаем само API *@
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <script>
+        let map = null;
+        let marker = null;
+        let content = document.createElement('div');
+
+        async function startApp() 
+        {
+            try 
+            {
+                const city = @Html.Raw(Json.Serialize(Model.Filter.SelectedCityCoordinate));
+                if(city)
+                {
+                await initMap(city[1], city[0]);
+                }
+                else
+                {
+                await initMap(53.20007, 50.15);
+                }
+                await addMarkers();
+            } 
+            catch (error) 
+            {
+                console.error("Ошибка при запуске карты:", error);
+            }
+        }
+
+
+        async function initMap(lat,lon) {
+        await ymaps3.ready;
+        const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker } = ymaps3;
+        if(map)
+        {
+            map.update({
+            location: 
+            {
+            center: [lon,lat],
+            zoom: 12, 
+            duration: 200,
+            easing: 'ease-in-out'
+            }
+            });
+        }
+        else
+        {
+            map = new YMap(document.getElementById('map'), 
+            {
+            location: {
+            center: [lon,lat],
+            zoom: 12
+            }
+            });
+        }
+
+        content.style.cssText = 'width: 25px; height: 25px; position: relative; transform: translate(-50%, -50%);';
+        content.innerHTML = `<img src="/images/markers/voleyball.png" style="width: 100%; height: 100%; display: block; cursor: pointer;">`;
+
+        map.addChild(new YMapDefaultSchemeLayer());
+        map.addChild(new YMapDefaultFeaturesLayer());
+
+        }
+
+        async function addMarkers()
+        {
+        if (!map) 
+        {
+        console.warn("Карта еще не готова. Ждем инициализации...");
+        return;
+        }
+        await ymaps3.ready;
+        const {YMap, YMapDefaultSchemeLayer, YMapMarker, YMapLayer } = ymaps3;
+        const {YMapClusterer, clusterByGrid} = await ymaps3.import('@@yandex/ymaps3-clusterer@0.0.1');
+        const marker = (feature) =>{
+                    return new ymaps3.YMapMarker(
+                    {
+                    coordinates: feature.geometry.coordinates,
+                    onClick() 
+                    {
+                    openEventInMap(feature.id);
+                    }
+                    },
+                    content.cloneNode(true)
+                    );
+        }
+        const cluster = (coordinates, features) =>
+        {
+            return new ymaps3.YMapMarker(
+            {
+            coordinates,
+            onClick()
+            {
+                openEventsInMap(features);
+            }
+            },
+            createClusterMarker(features.length,'/images/markers/voleyball.png')
+            );
+        }
+
+        const points = @Html.Raw(Json.Serialize((Model.result ?? new List<EventSummaryViewModel>()).Select(r =>
+                new
+                    {
+                        type = "Feature", 
+                        id = r.Id,
+                        geometry = new
+                        {
+                        type = "Point", 
+                        coordinates = new double[] { r.Location.LocationLongitude, r.Location.LocationLatitude }
+                                    },
+                        properties = new
+                        {
+              name = r.EventName 
+                        }
+                    }
+                ).ToList()));     
+
+        const clusterer = new YMapClusterer({
+                            method: clusterByGrid({gridSize: 64}),
+                            features: points,
+                            marker,
+                            cluster
+                            });
+        clusterer
+        map.addChild(clusterer);
+        
+        }
+        function createClusterMarker(count, imageUrl) {
+        const anchor = document.createElement('div');
+        anchor.style.position = 'absolute';
+        anchor.style.width = '0';
+        anchor.style.height = '0';
+
+        const visual = document.createElement('div');
+        visual.className = 'custom-cluster-visual';
+
+        visual.style.position = 'absolute';
+        visual.style.transform = 'translate(-50%, -50%)';
+        visual.style.width = '40px';
+        visual.style.height = '40px';
+        visual.style.display = 'flex';
+        visual.style.alignMode = 'center';
+        visual.style.justifyContent = 'center';
+
+        const img = document.createElement('img');
+        img.src = imageUrl || '/images/cluster-icon.png';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'contain';
+
+        const label = document.createElement('div');
+        label.className = 'cluster-label';
+        label.innerText = count;
+        label.style.position = 'absolute';
+
+        visual.appendChild(img);
+        visual.appendChild(label);
+        anchor.appendChild(visual);
+
+        return anchor;
+        }
+
+        const checkbox = document.getElementById('openMap');
+        const locationContainer = document.getElementById('locationFields');
+        async function openMap()
+        {
+        if (checkbox.checked) 
+        {
+        locationContainer.style.display = 'block';
+        locationContainer.disabled = false;
+        if (!window.ymaps3) 
+        {
+        const script = document.createElement('script');
+        script.src = "https://api-maps.yandex.ru/v3/?apikey=7dab67a6-408d-45e0-b597-70c61e0f4951&lang=ru_RU";
+        script.async = true;
+        script.onload = () => 
+        {
+        startApp();
+        }
+        document.head.appendChild(script);
+        }
+        else
+        {
+        if(!map)
+        {
+        startApp(); 
+        }
+        }
+        }
+        else
+        {
+        locationContainer.style.display = 'none';
+        locationContainer.disabled = true;
+        }
+        }
+        checkbox.addEventListener('change', openMap);
+
+
+        const citySelect = document.getElementById('selectedCity');
+        const addressInput = document.getElementById('AddressInput');
+
+        citySelect.addEventListener('change', function() 
+        {
+        checkbox.checked = false;
+        locationContainer.style.display = 'none';
+        locationContainer.disabled = true;
+        });
+
+
+        let allEvents= @Html.Raw(Json.Serialize(((Model.result ?? new List<EventSummaryViewModel>()).Select(e => new
+                {
+                    e.Id,
+                    e.EventName,
+                    e.ImagePath,
+                    e.StartTime
+                }).ToList())));
+    
+        async function openEventInMap(idEvent)
+        {
+            const resultsContainer = document.getElementById('SelectedEventInMap');
+            const event = allEvents.find(e => e.id === idEvent);
+            const modalElement = document.getElementById('exampleModal');
+            const modalInstance = new bootstrap.Modal(modalElement);        
+            if (!event) 
+            {
+                   console.error("Событие не найдено в локальном массиве");
+                   return;
+             }
+             resultsContainer.innerHTML = "";
+             renderEventInModal(event);
+             modalInstance.show();
+        }
+
+    async function openEventsInMap(eventsInClusterer)
+    {
+      const resultsContainer = document.getElementById('SelectedEventInMap');
+      const modalElement = document.getElementById('exampleModal');
+      const modalInstance = new bootstrap.Modal(modalElement);
+      const events = allEvents.filter(e =>
+                eventsInClusterer.some(ec => ec.id === e.id));
+      resultsContainer.innerHTML = "";
+      events.forEach(event=>
+                      {
+                         renderEventInModal(event);
+                      });
+      modalInstance.show();
+     }
+
+     async function renderEventInModal(event)
+     {
+                 const resultsContainer = document.getElementById('SelectedEventInMap');
+                 if (resultsContainer)
+                 {
+                            const eventDiv = document.createElement('div');
+                            eventDiv.className = 'card shadow-sm border-0">';
+                            eventDiv.innerHTML =    `
+                                ${event.imagePath ?
+                                        `<img src="/images/events/${event.imagePath}" class="card-img-top" alt="${event.eventName}" style="height: 180px; object-fit: cover; border-radius: 8px 8px 0 0;">`
+                                    : ''}
+                                <div class="card-body">
+                                    <h5 class="card-title fw-bold text-dark">${event.eventName}</h5>
+                                    <p class="card-text text-muted mb-3">
+                                                <i class="bi bi-calendar-event me-2"></i><strong>Начало:</strong> ${new Date(event.startTime).toLocaleString()}
+                                    </p>
+                                    <div class="d-grid">
+                                            <a href="Event/Event/${event.id}" class="btn btn-primary shadow-sm">
+                                            <i class="bi bi-box-arrow-in-right me-1"></i> Подробнее о событии
+                                        </a>
+                                    </div>
+                                </div>
+                        `;
+                         resultsContainer.appendChild(eventDiv);
+                       }
+     }
+           
+
+    </script>
+ }
+
+
+
