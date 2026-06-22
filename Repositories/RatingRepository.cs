@@ -13,19 +13,21 @@ namespace GoWeb.Repositories
             this.context = context;
         }
 
-        public async Task<bool> AddAsync(Rating rating)
+        public async Task<bool> AddAsync(string idUser,int idEventType, int value) 
         {
-            var existRating = await context.Ratings.FindAsync(new object[]{rating.UserName, rating.EventTypeId });
-            if (existRating != null)
+            if (value < 0 || value > 100) return false; 
+            try
             {
+                var rating = new Rating() { UserId = idUser, EventTypeId = idEventType, Value = value };
                 context.Ratings.Add(rating);
-            }
-            await context.Ratings.AddAsync(rating);
-            var rowsAffected = await context.SaveChangesAsync();
-            if (rowsAffected > 0)
+                var rowsAffected = await context.SaveChangesAsync();
                 return true;
+            }
+            catch(DbUpdateException)
+            {
+                return false;
+            }
             return false;
-
         }
 
         public async Task<Rating> GetByIdAsync(string idUser,int idTypeEvent)
@@ -33,15 +35,12 @@ namespace GoWeb.Repositories
            return await context.Ratings.FindAsync(new object[] { idUser, idTypeEvent });
         }
 
-        public async Task<List<Rating>> GetByIdAsync(List<string> userNames, int idTypeEvent)
-        {
-           return  await context.Ratings.Where(r=> userNames.Contains(r.UserName) && idTypeEvent==r.EventTypeId)
-                                 .ToListAsync();
-        }
+    
 
         public async Task<bool> UpdateAsync(Rating rating)
         {
-            context.Ratings.Update(rating); // отслеживание в новом контексте включаем
+            if (rating.Value < 0 || rating.Value > 100) return false;
+            context.Ratings.Update(rating); 
             var rowsAffected = await context.SaveChangesAsync();
             if (rowsAffected > 0)
                 return true;

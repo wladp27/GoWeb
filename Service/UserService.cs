@@ -23,61 +23,87 @@ namespace GoWeb.Service
             this.context = context;
         }
 
-        public async Task<List<string?>> GetUsersNamesDB(int idEvent) // без контекста сделать
+        public async Task<List<string>> GetIdUsersDB(int idEvent) // без контекста сделать
         {
           
             return await context.UsersEvents.Where(ue => ue.EventId == idEvent &&
                                                  (ue.StatusJoiningId == (int)JoiningStatus.Registered || ue.StatusJoiningId == (int)JoiningStatus.InReserve))
                                             .OrderBy(ue => ue.StatusJoiningId)
                                                .ThenBy(ue => ue.TimeJoinEvent)
-                                            .Select(ue=>ue.User.UserName)
+                                            .Select(ue=>ue.User.Id)
                                             .ToListAsync();
         }
 
 
-        public async Task<List<UserPreviewView>> GetPreviewUsers(List<string>? nicknamesUsers)
+        public async Task<List<UserPreviewView>> GetPreviewUsers(List<string>? idUsers)
         {
             var listUserPreview = new List<UserPreviewView>();
-            var listUserNotInCache = new List<string>();
-            foreach (var nickname in nicknamesUsers)
+            var idUserNotInCache = new List<string>();
+            foreach (var id in idUsers)
             {
-                if (cache.TryGetValue(new UsersPreviewCacheKey(nickname), out UserPreviewView? userPreviewView))
+                if (cache.TryGetValue(new UsersPreviewCacheKey(id), out UserPreviewView? userPreviewView))
                 {
                     listUserPreview.Add(userPreviewView);
                 }
                 else
                 {
-                    listUserNotInCache.Add(nickname);
+                    idUserNotInCache.Add(id);
                 }          
             }
-            if (listUserNotInCache.Count > 0) // ограничение существует
+            if (idUserNotInCache.Count > 0) // ограничение существует
             {
-                var userNotInCache = await GetPreviewUsersDB(listUserNotInCache);
+                var userNotInCache = await GetPreviewUsersDB(idUserNotInCache);
                 listUserPreview.AddRange(userNotInCache);
                 WriteUsersInCache(userNotInCache);
             }
             return listUserPreview;
         }
 
-        public async Task<List<UserPreviewView>> GetPreviewUsersDB(List<string>? nicknamesUsers)
+        public async Task<List<UserPreviewView>> GetPreviewUsersDB(List<string>? idUsers)
         {
             var usersPreview = await userRepository.GetAllUsersQueryable()
-                                              .Where(e => nicknamesUsers.Contains(e.UserName))
+                                              .Where(e => idUsers.Contains(e.Id))
                                               .ProjectTo<UserPreviewView>(mapper.ConfigurationProvider)
                                               .ToListAsync();
             return usersPreview;
         }
 
+
+        public async Task<UserPreviewView> GetPreviewUserDB(string idUsers)
+        {
+            var usersPreview = await userRepository.GetAllUsersQueryable()
+                                .ProjectTo<UserPreviewView>(mapper.ConfigurationProvider)
+                                .FirstOrDefaultAsync(e => e.Id == idUsers);
+            return usersPreview;
+        }
+
+
+
         public void WriteUsersInCache(List<UserPreviewView> usersPreview)
         {
             foreach (var userPrev in usersPreview)
             {
-                cache.Set(new UsersPreviewCacheKey(userPrev.UserName), userPrev, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(24)));
+                cache.Set(new UsersPreviewCacheKey(userPrev.Id), userPrev, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(24)));
             }  
         }
 
 
-        
-        public record UsersPreviewCacheKey(string userName);
+        public  async Task<UserPreviewView> GetPreviewUser(string idUser)
+        {
+            if (cache.TryGetValue(new UsersPreviewCacheKey(idUser), out UserPreviewView? userPreviewView))
+            {
+                return userPreviewView;
+            }
+
+            var userPrevDb = await GetPreviewUserDB(idUser);
+            if (userPrevDb != null)
+            {
+                cache.Set(new UsersPreviewCacheKey(userPrevDb.Id), userPrevDb, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromHours(24)));
+            }
+            return userPrevDb;
+        }
+
+
+        public record UsersPreviewCacheKey(string userId);
     }
 }

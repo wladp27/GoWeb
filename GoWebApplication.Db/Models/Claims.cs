@@ -8,7 +8,7 @@ namespace GoWeb.Сonstants.Claims
     {
         public static List<string> listClaims = new List<string>
         {
-            "idCity"
+            nameof(User.idCity)
         };
         public static List<Claim> GetClaims(User user)
         {

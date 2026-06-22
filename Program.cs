@@ -109,6 +109,7 @@ builder.Services.AddScoped<IStatusEvent,StatusEventRepository>();
 builder.Services.AddScoped <IStatusEventService,StatusEventService>();
 builder.Services.AddScoped<IUserEvent, UserEventRepository>();
 builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+builder.Services.AddScoped<IRatingService, RatingService>();
 builder.Services.AddScoped<UserEventRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IUserService, UserService>();

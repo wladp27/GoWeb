@@ -9,16 +9,10 @@ namespace GoWeb.Interfaces
     public interface IUserService
     {
 
-
-
-
-        public  Task<List<string?>> GetUsersNamesDB(int idEvent);
-        public  Task<List<UserPreviewView>> GetPreviewUsers(List<string>? nicknamesUsers);
-
-
-        public Task<List<UserPreviewView>> GetPreviewUsersDB(List<string>? nicknamesUsers);
-
-
+        public  Task<List<string?>> GetIdUsersDB(int idEvent);
+        public  Task<List<UserPreviewView>> GetPreviewUsers(List<string>? idUsers);
+        public Task<UserPreviewView> GetPreviewUser(string idUser);
+        public Task<List<UserPreviewView>> GetPreviewUsersDB(List<string>? idUsers);
         public void WriteUsersInCache(List<UserPreviewView> usersPreview);
 
 

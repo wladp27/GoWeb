@@ -14,27 +14,35 @@ namespace GoWebApplication.Db.Data.Configurations
         public void Configure(EntityTypeBuilder<Rating> builder)
         {
             builder.ToTable("ratings");
-            builder.HasKey(r=>new {r.UserName,r.EventTypeId});
+            builder.HasKey(r=>new {r.UserId,r.EventTypeId});
+
+
+          
 
             builder.Property(c => c.Value).HasColumnName("value")
                     .IsRequired();
+
+            builder.ToTable(t => t.HasCheckConstraint(
+              "CK_Rating_Value_Range", 
+             "`value` >= 0 AND `value` <= 100" 
+          ));
 
             builder.Property(c => c.EventTypeId)
                     .HasColumnName("event_type_id")
                     .IsRequired();
 
-            builder.Property(c => c.UserName)
-                    .HasColumnName("user_name")
+            builder.Property(c => c.UserId)
+                    .HasColumnName("user_id")
                     .IsRequired();
 
             builder.HasOne(r => r.User)
                    .WithMany(u => u.Ratings)
-                   .HasForeignKey(r => r.UserName)
+                   .HasForeignKey(r => r.UserId)
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(r => r.EventType)
                    .WithMany(e => e.Ratings)
-                   .HasForeignKey(e => e.EventTypeId)
+                   .HasForeignKey(r => r.EventTypeId)
                    .OnDelete(DeleteBehavior.Restrict);
         }
     }

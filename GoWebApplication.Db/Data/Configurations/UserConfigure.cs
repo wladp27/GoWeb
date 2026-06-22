@@ -77,7 +77,7 @@ namespace GoWebApplication.Db.Data.Configurations
 
             builder.HasMany(u => u.Ratings)
                     .WithOne(r => r.User)
-                    .HasForeignKey(r => r.UserName)
+                    .HasForeignKey(r => r.UserId)
                     .OnDelete(DeleteBehavior.Restrict); ;
         }
     }

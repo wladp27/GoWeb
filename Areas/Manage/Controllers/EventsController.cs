@@ -31,8 +31,8 @@ namespace GoWeb.Areas.Manage.Controllers
         private readonly ILocationRepository locationRepository;
         private readonly IWebHostEnvironment webHostEnvironment;
         private readonly IAuthorizationService authorizationService;
-        private readonly IRatingRepository ratingRepository;
-        public EventsController(ICityService cityService, IAuthorizationService authorizationService, IRatingRepository ratingRepository,
+        private readonly IRatingService ratingService;
+        public EventsController(ICityService cityService, IAuthorizationService authorizationService, IRatingService ratingService,
                                IMapper mapper, IStatusEventService statusEventService, IEventTypeService eventTypeService,
                                IEventService eventService, IUserRepository userRepository, ICommandQueue commandQueue, ILocationRepository locationRepository, IWebHostEnvironment webHostEnvironment)
         {
@@ -46,7 +46,7 @@ namespace GoWeb.Areas.Manage.Controllers
             this.locationRepository = locationRepository;
             this.webHostEnvironment = webHostEnvironment;
             this.authorizationService = authorizationService;
-            this.ratingRepository = ratingRepository;
+            this.ratingService = ratingService;
         }
 
 
@@ -222,23 +222,23 @@ namespace GoWeb.Areas.Manage.Controllers
         }
 
         [TypeFilter(typeof(EnsureEventExists))]
-        public async Task<IActionResult> SetRatingUser(string userName, int idEvent, int value) // Добавить проверку на существования пользователя
+        public async Task<IActionResult> SetRatingUser(string idUser, int idEvent, int value) // Добавить проверку на существования пользователя
         {
             var ev = HttpContext.Items[typeof(Event)] as EventSummaryViewModel;
             var access = await authorizationService.AuthorizeAsync(User, ev, new OrginizerOrAdminRequirement());
             if (access.Succeeded)
             {
-                var existRating = await ratingRepository.GetByIdAsync(userName, ev.EventTypeId);
+                var existRating = await ratingService.GetByIdAsync(idUser, ev.EventTypeId);
                 if (existRating != null)
                 {
                     existRating.Value = value;
-                    var resultUpdate =  await ratingRepository.UpdateAsync(existRating);
+                    var resultUpdate =  await ratingService.UpdateAsync(existRating);
                     if (resultUpdate) TempData["SuccessMessage"] = "Рейтинг обновлен";
                     else TempData["ErrorMessage"] = "не удалось обновить рейтинг";
                 }
                 else
                 {
-                    var resultSet = await ratingRepository.AddAsync(new Rating { UserName = userName,EventTypeId = ev.EventTypeId,Value=value});
+                    var resultSet = await ratingService.AddAsync( idUser,  ev.EventTypeId,value);
                     if (resultSet) TempData["SuccessMessage"] = "Рейтинг установлен";
                     else TempData["ErrorMessage"] = "Не удалось установить рейтинг";
                 }

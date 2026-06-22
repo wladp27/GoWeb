@@ -8,7 +8,7 @@ using static GoWeb.Service.UserService;
 
 namespace GoWeb.Service
 {
-    public class RatingService
+    public class RatingService: IRatingService
     {
 
         private readonly IRatingRepository ratingRepository;
@@ -18,31 +18,35 @@ namespace GoWeb.Service
             this.ratingRepository = ratingRepository;
             this.cache = cache;
         }
-        //public async Task<bool> AddAsync(Rating rating)
-        //{
-        //    var resultAdd=await ratingRepository.AddAsync(rating);
-        //    if (resultAdd != null)
-        //    {
-        //        cache.Remove(new UsersPreviewCacheKey())
-        //        return true;
-        //    }
-        //    return false;
 
-        //}
+        public async Task<bool> AddAsync(string idUser, int idEventType, int value)
+        {
+            var resultAdd = await ratingRepository.AddAsync(idUser, idEventType, value);
+            if (resultAdd)
+            {
+                cache.Remove(new UsersPreviewCacheKey(idUser));
+                return true;
+            }
+            return false;
 
-        //public async Task<Rating> GetByIdAsync(string idUser, int idTypeEvent)
-        //{
-           
-        //}
+        }
 
-        //public async Task<List<Rating>> GetByIdAsync(List<string> idUsers, int idTypeEvent)
-        //{
-            
-        //}
+        public async Task<Rating> GetByIdAsync(string idUser, int idTypeEvent)
+        {
+           return await ratingRepository.GetByIdAsync(idUser,idTypeEvent);
+        }
 
-        //public async Task<bool> UpdateAsync(Rating rating)
-        //{
-           
-        //}
+
+
+        public async Task<bool> UpdateAsync(Rating rating)
+        {
+           var resultUpdate = await ratingRepository.UpdateAsync(rating);
+            if(resultUpdate)
+            {
+                cache.Remove(new UsersPreviewCacheKey(rating.UserId));
+                return true;
+            }
+            return false;
+        }
     }
 }

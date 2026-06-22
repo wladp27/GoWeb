@@ -77,27 +77,27 @@ namespace GoWeb.Service
         public async Task<List<UserPreviewView>> GetUsersEventAsync(int idEvent)
         {
 
-            if (cache.TryGetValue(new UsersInEventCacheKey(idEvent), out List<string>? nicknamesUsers))
+            if (cache.TryGetValue(new UsersInEventCacheKey(idEvent), out List<string>? idUsers))
             {
-                var users = await userService.GetPreviewUsers(nicknamesUsers);
+                var users = await userService.GetPreviewUsers(idUsers);
                 return users;
             }
             await semofor.WaitAsync();
             try
             {
-                if (cache.TryGetValue(new UsersInEventCacheKey(idEvent), out nicknamesUsers))
+                if (cache.TryGetValue(new UsersInEventCacheKey(idEvent), out idUsers))
                 {
-                    var users = await userService.GetPreviewUsers(nicknamesUsers);
+                    var users = await userService.GetPreviewUsers(idUsers);
                     return users;
                 }
-                var listUserNameInEvent = await userService.GetUsersNamesDB(idEvent);
-                if (listUserNameInEvent != null)
+                var listIdUsersInEvent = await userService.GetIdUsersDB(idEvent);
+                if (listIdUsersInEvent != null)
                 {
-                    cache.Set(new UsersInEventCacheKey(idEvent), listUserNameInEvent, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(60)));
-                    var users = await userService.GetPreviewUsers(listUserNameInEvent);
+                    cache.Set(new UsersInEventCacheKey(idEvent), listIdUsersInEvent, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(60)));
+                    var users = await userService.GetPreviewUsers(listIdUsersInEvent);
                     return users;
                 }
-                cache.Set(new UsersInEventCacheKey(idEvent), listUserNameInEvent, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(60))); // если null
+                cache.Set(new UsersInEventCacheKey(idEvent), listIdUsersInEvent, new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(60))); // если null
             }
             finally
             {

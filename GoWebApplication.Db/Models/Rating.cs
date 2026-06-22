@@ -10,7 +10,7 @@ namespace GoWebApplication.Db.Models
     {
         public int Value { get; set; }
         public int EventTypeId { get; set; }
-        public string UserName { get; set; }
+        public string UserId { get; set; }
         public EventType EventType { get; set; }
         public User User { get; set; }
 
