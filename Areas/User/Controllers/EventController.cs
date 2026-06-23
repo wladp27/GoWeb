@@ -53,6 +53,9 @@ namespace GoWeb.Areas.User.Controllers
                     case JoinResult.TimeCoincidences:
                         TempData["ErrorMessage"] = "Ошибка, данное событие пересекается по времени с другим событием в которое вы записаны!";
                         break;
+                    case JoinResult.IsufficientlyRequiredRating:
+                        TempData["ErrorMessage"] = "Ошибка,Недостаточно высокий рейтинг";
+                        break;
                 }
                 
             }

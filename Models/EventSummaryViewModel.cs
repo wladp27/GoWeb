@@ -42,7 +42,7 @@ namespace GoWeb.Models
 
         public int? StatusEventId { get; set; }
         public int? CountDaysRecreate { get; set; }
-
+        public  int RequiredRating { get; set; } 
 
         public LocationViewModel Location { get; set; }
         public string ImagePath { get; set; }

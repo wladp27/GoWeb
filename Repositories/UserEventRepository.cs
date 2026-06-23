@@ -10,12 +10,12 @@ namespace GoWeb.Repositories
     public class UserEventRepository : IUserEvent
     {
         private readonly IEventService eventService ;
-        private readonly IUserRepository userRepository;
+        private readonly IUserService userService;
         private readonly ApplicationDbContext context;
-        public UserEventRepository(IEventService eventService, IUserRepository userRepository, ApplicationDbContext context) 
+        public UserEventRepository(IEventService eventService, IUserService userService, ApplicationDbContext context) 
         {
             this.eventService = eventService;
-            this.userRepository = userRepository;
+            this.userService = userService;
             this.context = context;
         }
 
@@ -56,81 +56,12 @@ namespace GoWeb.Repositories
             return dictUser;
         }
 
-        public async Task<JoinResult> JoinAsync(string idUser,int idEvent)
-        {
-            var ExistenceUser = await userRepository.ExistenceUser(idUser);
-            var ev = await eventService.GetByIdAsync(idEvent);
-            if (ExistenceUser)
-                return JoinResult.UserNotFound;
-            if (ev == null)
-                return JoinResult.EventNotFound;
-            if (ev.StatusEventId == (int)StatusEventConts.Published)
-            {
-                var timeCoincidences = await context.UsersEvents.AnyAsync(u => u.UserId == idUser && u.EventId != ev.Id 
-                                                && u.Event.StatusEventId == (int)StatusEventConts.Published &&
-                                                (
-                                                 (ev.StartTime < u.Event.EndTime && ev.EndTime > u.Event.StartTime)
-                                                )
-                                        );
-                if(timeCoincidences)
-                {
-                    return JoinResult.TimeCoincidences;
-                }
-                var ue = await context.UsersEvents.FirstOrDefaultAsync(ue => ue.UserId == idUser && ue.EventId == idEvent);
-                var countUsersInEvent = await context.UsersEvents.Where(ue => ue.EventId == idEvent && ue.StatusJoiningId == (int)JoiningStatus.Registered).CountAsync();
-                if (ue != null)
-                {
-                    if (ue.StatusJoiningId == (int)JoiningStatus.Cancelled)
-                    {
-                        if (countUsersInEvent < ev.MaxParticipants)
-                        {
-                            ue.StatusJoiningId = (int)JoiningStatus.Registered;
-                            ue.TimeJoinEvent = DateTime.UtcNow;
-                            await context.SaveChangesAsync();
-                            return JoinResult.SuccessStatusUpdated;
-                        }
-                        else
-                        {
-                            ue.StatusJoiningId = (int)JoiningStatus.InReserve;
-                            ue.TimeJoinEvent = DateTime.UtcNow;
-                            await context.SaveChangesAsync();
-                            return JoinResult.SuccessInReserve;
-                        }
-                    }
-                    else
-                        return JoinResult.AlreadyRegistered;
-                }
-                else 
-                {
-                    var userEvent = new UserEvent()
-                    {
-                        EventId = idEvent,
-                        UserId = idUser,
-                        TimeJoinEvent = DateTime.UtcNow
-                    };
-                    if (countUsersInEvent < ev.MaxParticipants)
-                    {
-                        userEvent.StatusJoiningId = (int)JoiningStatus.Registered;
-                        await context.UsersEvents.AddAsync(userEvent);
-                        await context.SaveChangesAsync();
-                        return JoinResult.SuccessNewRegistration;
-                    }
-                    else 
-                    {
-                        userEvent.StatusJoiningId = (int)JoiningStatus.InReserve;
-                        await context.UsersEvents.AddAsync(userEvent);
-                        await context.SaveChangesAsync();
-                        return JoinResult.SuccessInReserve;
-                    }
-                }         
-            }
-            return JoinResult.NoAccessToEvent;
-        }
+       
 
         public async Task<LeaveResult> LeaveUserAsync(string idUser, int idEvent)
         {
-            var ExistenceUser = await userRepository.ExistenceUser(idUser);
-            if (ExistenceUser)
+            var user = await userService.GetPreviewUser(idUser);
+            if (user==null)
                 return LeaveResult.UserNotFound;
             var ev = await eventService.GetByIdAsync(idEvent); // лишние данные
             if (ev == null)
@@ -172,5 +103,65 @@ namespace GoWeb.Repositories
             }
             return LeaveResult.UserIsNotRegistered;
         }
+
+
+        public async Task<JoinResult> JoinAsync(string idUser, int idEvent)
+        {
+            var ev = await eventService.GetByIdAsync(idEvent);
+            if (ev == null)
+                return JoinResult.EventNotFound;
+            if (ev.StatusEventId != (int)StatusEventConts.Published)
+                return JoinResult.NoAccessToEvent;
+            var result=await context.Users
+                .Where(u => u.Id == idUser)
+                .Select(u => 
+                            new
+                                {
+                                    RequiredRating = u.Ratings.Any(r => r.EventTypeId == ev.EventTypeId && r.Value >= ev.RequiredRating),
+                                    BookedForAnotherTime = u.UserEvents.Any(ue =>
+                                                                    ue.EventId != idEvent
+                                                                    && ue.Event.StatusEventId == (int)StatusEventConts.Published
+                                                                    && (ev.StartTime < ue.Event.EndTime && ev.EndTime > ue.Event.StartTime)),
+                                    Registation = u.UserEvents.FirstOrDefault(ue => ue.EventId == idEvent),
+                                    countUsersInEvent = context.UsersEvents.Where(ue => ue.EventId == idEvent && ue.StatusJoiningId == (int)JoiningStatus.Registered).Count()
+                            }
+                        )
+                .FirstOrDefaultAsync();
+            if (result == null)
+                return JoinResult.UserNotFound;
+            if (!result.RequiredRating)   return JoinResult.IsufficientlyRequiredRating;
+            if (result.BookedForAnotherTime) return JoinResult.TimeCoincidences;
+            bool hasFreePlaces = result.countUsersInEvent < ev.MaxParticipants;
+            if (result.Registation != null)
+            {
+                if (result.Registation.StatusJoiningId == (int)JoiningStatus.Cancelled)
+                    {
+                        context.Entry(result.Registation).State = EntityState.Modified;
+                        result.Registation.StatusJoiningId = hasFreePlaces?(int)JoiningStatus.Registered: (int)JoiningStatus.InReserve;
+                        result.Registation.TimeJoinEvent = DateTime.UtcNow;
+                        await context.SaveChangesAsync();
+                        return hasFreePlaces ? JoinResult.SuccessStatusUpdated : JoinResult.SuccessInReserve;
+                    }
+                    else
+                        return JoinResult.AlreadyRegistered;
+            }
+            else
+            {
+                    var userEvent = new UserEvent()
+                    {
+                        EventId = idEvent,
+                        UserId = idUser,
+                        TimeJoinEvent = DateTime.UtcNow,
+                        StatusJoiningId = hasFreePlaces ? (int)JoiningStatus.Registered : (int)JoiningStatus.InReserve
+                    };
+                    context.UsersEvents.Add(userEvent);
+                    await context.SaveChangesAsync();
+                    return hasFreePlaces ? JoinResult.SuccessNewRegistration : JoinResult.SuccessInReserve; 
+            }
+        }
+        
+
+
+
     }
 }

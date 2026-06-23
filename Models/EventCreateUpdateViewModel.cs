@@ -23,6 +23,11 @@ namespace GoWeb.Models
         public int? LocationId { get; set; }
 
 
+        [Required(ErrorMessage = "Пожалуйста, введите рейтинг события")]
+        [Display(Name = "Рейтинг события")]
+        [Range(0,100, ErrorMessage = "Рейтинг события в пределах от 0 до 100")]
+        public int RequiredRating {  get; set; }
+
         [Required(ErrorMessage = "Пожалуйста, дату и время начала события")]
         [Display(Name = "Дата и время начала события")]
         [DataType(DataType.DateTime)]

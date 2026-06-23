@@ -37,7 +37,13 @@
         /// <summary>
         /// Регистрация невозможна: вы записаны на другое мероприятие.
         /// </summary>
-        TimeCoincidences
+        TimeCoincidences,
+
+        /// <summary>
+        /// Регистрация невозможна: недостаточно высокий рейтинг.
+        /// </summary>
+        IsufficientlyRequiredRating
+
 
 
     }

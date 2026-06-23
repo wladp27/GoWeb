@@ -30,7 +30,16 @@ namespace GoWebApplication.Db.Data.Configurations
                     .HasColumnName("event_type_id")
                     .IsRequired(false);
 
-         
+            builder.Property(ev => ev.RequiredRating)
+                      .HasColumnName("required_rating")
+                      .HasDefaultValue(0)
+                      .IsRequired();
+
+            builder.ToTable(t => t.HasCheckConstraint(
+             "CK_Rating_Value_Range",
+            "`required_rating` >= 0 AND `required_rating` <= 100"
+            ));
+       
 
             builder.Property(ev => ev.StatusEventId)
                     .HasColumnName("status_event_id")
