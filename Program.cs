@@ -13,8 +13,16 @@ using Microsoft.AspNetCore.Authorization;
 
 using GoWeb.Сonstants;
 using GoWeb.Filters.Authorization;
+using Serilog.Formatting.Compact;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+builder.Host.UseSerilog();
 
 // --- ✅ БЛОК РЕГИСТРАЦИИ СЕРВИСОВ ---
 
